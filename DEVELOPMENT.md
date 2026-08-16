@@ -204,14 +204,18 @@ CI lives in `.github/workflows/ci.yml` (checks) and
 
 | Trigger | Checks |
 |---|---|
-| Every PR (to develop or main) and every push to develop | `cargo fmt --check`, `cargo clippy -- -D warnings`, unit + doc tests, MSRV check (1.85), `cargo audit`, `cargo deny` |
+| Every PR (to develop or main) and every push to develop | `cargo fmt --check`, `cargo clippy -- -D warnings`, unit + doc tests, MSRV check (1.85), `cargo audit`, `cargo deny`, `cargo tree -e features` must not contain `preserve_order` |
 | PR to main (the release PR) | Quality gate: fmt, clippy, tests, `cargo package` |
 | Release PR merged into main | release-plz creates the git tag (`keystate-cli-v<version>`), publishes to crates.io, and creates the GitHub release |
 | Nightly, scheduled | Full backend version matrix (integration tests across all supported versions), completeness regression test (adapter repos) |
+| Integration (live Keycloak) | Runs the repo's `docker-compose.yml` stack and the `tests/integration.rs` suite (`cargo test --test integration -- --ignored`) — drives the real binary and verifies the output: config.json / report.json content, byte-identical re-extraction, and `--check` drift semantics (exit 3) |
 
-Once the CLI gains its integration-test suite (during the crate scaffold),
-the live-Keycloak integration job is added to `ci.yml` and to the "Every PR"
-row, mirroring the adapter.
+The integration suite needs the compose stack; on a PR it runs in the
+`test-integration` job, locally via `docker compose up -d --wait` and
+`cargo test --test integration -- --ignored`. The `preserve_order` guard is
+the second line of defense behind core's explicit key sorting: Cargo unifies
+features per build, so a transitive crate enabling serde_json's
+`preserve_order` would silently break canonical byte stability.
 
 Nothing ships without a green gate: the release-plz job only runs on the main
 merge, and the crates.io token exists only as the `CARGO_REGISTRY_TOKEN`

@@ -1,0 +1,40 @@
+[package]
+name = "keystate-cli"
+version = "0.1.0"
+edition = "2024"
+description = "The Keystate command-line tool — extracts and verifies IAM configuration state from backend databases."
+license = "Apache-2.0"
+rust-version = "1.85"
+readme = "README.md"
+repository = "https://github.com/KeyState/keystate-cli"
+homepage = "https://github.com/KeyState/keystate-cli"
+documentation = "https://docs.rs/keystate-cli"
+keywords = ["identity", "iam", "keycloak", "configuration", "extraction"]
+categories = ["command-line-utilities"]
+
+[package.metadata.docs.rs]
+all-features = true
+
+[[bin]]
+name = "keystate"
+path = "src/main.rs"
+
+[dependencies]
+keystate-core = { version = "0.1.0", git = "https://github.com/KeyState/keystate-core", branch = "develop" }
+# Temporary: the extractor lives on the adapter's v0.2 feature branch until that
+# PR merges to develop (then pin `branch = "develop"`, finally crates.io).
+keystate-adapter-keycloak = { version = "0.2.0", git = "https://github.com/KeyState/keystate-adapter-keycloak", branch = "feat/v0.2-realm-extraction" }
+clap = { version = "4.5", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+thiserror = "2.0"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+rpassword = "7.3"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.0"
+pretty_assertions = "1.4"
+tempfile = "3.0"

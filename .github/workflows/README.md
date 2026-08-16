@@ -21,14 +21,11 @@ newer push supersedes them.
 | `fmt` | `cargo fmt --all -- --check` — enforces the shared formatting. |
 | `clippy` | `cargo clippy --all-targets -- -D warnings` — lints all targets, warnings are errors. |
 | `test` | `cargo test --all-targets` plus `cargo test --doc` — unit, integration, and doc tests. |
+| `test-integration` | Runs the repo's `docker-compose.yml` stack (Keycloak 26.7 + Postgres) on the runner via `docker compose up -d --wait`, then runs the live-DB suite (`tests/integration.rs`, the `#[ignore]`d tests) that drives the real `keystate` binary and verifies its output — config.json, report.json, byte-identical re-extraction, and `--check` drift semantics (exit 3). |
 | `msrv` | `cargo check --all-targets` on Rust 1.85 — proves the published MSRV (`rust-version` in `Cargo.toml`) still compiles. |
 | `audit` | `rustsec/audit-check@v2` — blocks on known vulnerabilities in the dependency tree. |
 | `deny` | `embarkStudios/cargo-deny-action@v2` — enforces the license allowlist and dependency policy in `deny.toml`. |
-
-> A `test-integration` job (like the adapter's — live Keycloak + Postgres via
-> the repo's `docker-compose.yml` stack, `cargo test --test integration -- --ignored`)
-> will be added once the CLI gains its integration-test suite during the crate
-> scaffold.
+| `features` | `cargo tree -e features` must not contain `preserve_order` — Cargo unifies features per build, so a transitive crate enabling it would silently flip serde_json's map backing and break canonical byte stability. This job fails the build if it appears anywhere in the tree. |
 
 ## `release.yml` — Releases (PRs to `main` and their merges)
 
