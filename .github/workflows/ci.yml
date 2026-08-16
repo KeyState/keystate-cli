@@ -48,6 +48,23 @@ jobs:
       - name: cargo test --doc
         run: cargo test --doc
 
+  test-integration:
+    name: Integration (live Keycloak)
+    runs-on: ubuntu-latest
+    env:
+      KEYSTATE_TEST_DB_URL: postgres://keycloak:keycloak@localhost:5432/keycloak
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Start Keycloak + Postgres
+        run: docker compose up -d --wait --wait-timeout 300
+      - name: cargo test (integration)
+        run: cargo test --test integration -- --ignored
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
+
   msrv:
     name: MSRV (1.85)
     runs-on: ubuntu-latest
@@ -73,3 +90,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: embarkStudios/cargo-deny-action@v2
+
+  features:
+    name: No preserve_order
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: ensure serde_json preserve_order is not enabled
+        run: |
+          if cargo tree -e features | grep -q "preserve_order"; then
+            echo "::error::serde_json 'preserve_order' is enabled — it silently changes canonical byte ordering."
+            cargo tree -e features -i serde_json
+            exit 1
+          fi

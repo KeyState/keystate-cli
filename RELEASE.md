@@ -37,39 +37,35 @@ piecemeal across the org.
 
 ## 2. Release Mechanics
 
-Releases are automated end to end with [release-plz], driven by the
-Conventional Commits in the repository history. The pipeline lives in
-`.github/workflows/release.yml`; CI gates live in `.github/workflows/ci.yml`.
-
 **Branches: `develop` integrates, `main` releases.** All work merges into
 `develop` via PR and is gated by `ci.yml`. Nothing is ever pushed to `main`
 directly. A release is the deliberate act of opening a **release PR from
 `develop` to `main`** and merging it.
 
-- **A release PR to `main` is gated, then merged.** `release.yml` runs a
-  quality gate (fmt, clippy `-D warnings`, tests, `cargo package`) on the PR
-  to `main`. Once merged, release-plz computes what changed since the last
-  release:
-  - if there are unreleased commits, it opens/updates a **release PR** that
-    bumps `Cargo.toml`, appends to `CHANGELOG.md`, and labels the PR;
-  - once *that* PR is merged, it **creates the git tag
-    (`keystate-cli-v<version>`), publishes the crate to crates.io, and
-    creates the GitHub release** — all in CI, from the `release-pr` command.
-- **No direct pushes to `main`, no manual tagging, no manual `cargo publish`.**
-  The only way `main` changes is a merged PR from `develop`; the crates.io
-  token exists only as the `CARGO_REGISTRY_TOKEN` repository secret.
-- **Releases only happen on green gates.** `release.yml` gates the merge PR
-  before it lands; `ci.yml` runs fmt, clippy, the unit suite, doctests, an
-  MSRV check (1.85), `cargo audit`, and `cargo-deny` on every PR and push to
-  `develop`.
-- **Semver is derived, not decided by hand.** Commit types map to the bump
-  (`feat:` → minor, `fix:`/`chore:` → patch, breaking → major), which keeps
-  the versioning policy above mechanical rather than a judgement call per
-  release.
-- **First publish is the one manual step.** The crate name must be reserved
-  on crates.io and a publish-capable token stored as the
-  `CARGO_REGISTRY_TOKEN` secret before the first automated release. See
-  "First release: one-time setup" below.
+- **A release PR to `main` is gated, then merged.** `ci.yml` runs on every
+  pull request — including one targeting `main` — so the release PR gets the
+  full gate (fmt, clippy `-D warnings`, unit + integration + doc tests, live
+  Keycloak integration, MSRV 1.85, `cargo audit`, `cargo deny`, the
+  `preserve_order` guard) before it can land.
+- **`keystate-cli` is not published to crates.io.** It ships as a binary and
+  a Docker image on GitHub Releases, so there is no crates.io publish step,
+  no `CARGO_REGISTRY_TOKEN`, and no release-plz pipeline. Consequently the
+  CLI depends on `keystate-core` and `keystate-adapter-keycloak` directly via
+  git — a permanent arrangement, not a pre-release workaround. Keep those
+  pins on stable branches (`develop`), never feature branches, once the
+  adapter's extraction work merges.
+- **A release is: merge the release PR, then tag.** After the release PR to
+  `main` merges, tag it (`keystate-cli-v<version>`), build the release
+  binary, and publish the GitHub release (with the Docker image). Building
+  and attaching artifacts can be automated with a tag-triggered workflow
+  later; the org does not currently gate on it.
+- **No direct pushes to `main`, no manual `cargo publish`.** The only way
+  `main` changes is a merged PR from `develop`.
+- **Releases only happen on green gates.** `ci.yml` gates every PR and push
+  to `develop`; the release PR to `main` runs the same suite.
+- **Versions are bumped in the release PR.** Bump `Cargo.toml` in the release
+  PR itself. The org follows the semver policy in §1; Conventional Commit
+  types in the merged history tell you what the bump should be.
 
 ### Publish targets per repo
 
@@ -77,34 +73,8 @@ directly. A release is the deliberate act of opening a **release PR from
   project is public and stable enough to commit to that namespace; a private
   registry is fine in the meantime).
 - `keystate-cli` is the only repo that builds and publishes the actual
-  distributable: the binary release on GitHub Releases, and the Docker
-  image, pushed on every tagged release via CI.
-
-### First release: one-time setup
-
-1. **Reserve the name.** Run `cargo publish` once manually (or add the user
-   to the crates.io crate) so `keystate-cli` belongs to an account you
-   control. Until then the automated publish has nothing to publish to.
-2. **Add the token.** Under repo Settings → Secrets → Actions, create
-   `CARGO_REGISTRY_TOKEN` with a crates.io token that has publish rights.
-3. **Allow Actions to open the release PR.** release-plz opens the PR with
-   the built-in `GITHUB_TOKEN`. If the org blocks that, the run fails with
-   `GitHub Actions is not permitted to create or approve pull requests`.
-   Fix under repo Settings → Actions → General → *Workflow permissions*:
-   check **Allow GitHub Actions to create and approve pull requests**. If the
-   org forbids enabling it, use a fine-grained PAT (read/write on contents
-   and pull requests) stored as a secret and pass it as `GITHUB_TOKEN`
-   instead — the workflow's `permissions` block then needs no `contents`/PR
-   grant.
-4. Merge a `feat:` (or `fix:`) PR to `develop`. When ready, open the release
-   PR from `develop` to `main` and merge it. The pipeline does the rest:
-   release PR → merge → tag → crates.io publish → GitHub release.
-
-### No release goes out on a failing build
-
-The scheduled backend-matrix and completeness-regression tests (from the
-development document) act as a further gate — if a nightly run against
-`develop` is red, the fix lands before the next release, not after.
+  distributable — the binary release on GitHub Releases and the Docker image
+  — and it is **not** published to crates.io.
 
 ### Branch protection
 
@@ -113,8 +83,6 @@ protect `main` (require PRs, require status checks, disallow force push and
 direct pushes) so the only path into `main` is a reviewed release PR. This is
 what makes the "no pushes to main" rule hold mechanically rather than by
 convention.
-
-[release-plz]: https://release-plz.enyx.fr/
 
 ## 3. The Compatibility Matrix
 
