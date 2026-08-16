@@ -8,9 +8,9 @@ multiple-versions = "warn"
 wildcards = "deny"
 
 [sources]
-# Temporary: keystate-core and keystate-adapter-keycloak are consumed from
-# git until they are published to crates.io. Remove each entry once the
-# Cargo.toml dependency points at the registry.
+# Permanent: keystate-cli is not published to crates.io, so core and the
+# adapter are always consumed from git. Keep these entries in sync with the
+# Cargo.toml git dependencies.
 allow-git = [
     "https://github.com/KeyState/keystate-core",
     "https://github.com/KeyState/keystate-adapter-keycloak",

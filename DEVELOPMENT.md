@@ -16,8 +16,9 @@ requests:
   `develop` and on every PR.
 - **`main` — release-only.** Nothing is pushed to `main` directly and feature
   work never merges there. The *only* way `main` changes is a release PR from
-  `develop`, which is exactly what's merged when a release is wanted. Merging
-  it triggers `release.yml`, which gates the release and publishes.
+  `develop`, which is exactly what's merged when a release is wanted. The PR
+  to `main` runs the same `ci.yml` gate as any other PR; once merged, the
+  maintainer tags it (see `RELEASE.md`).
 
 Releases are a deliberate act, not an ambient side effect of merging work:
 
@@ -199,14 +200,14 @@ test server.
 
 ## 5. What CI Runs, and When
 
-CI lives in `.github/workflows/ci.yml` (checks) and
-`.github/workflows/release.yml` (release-plz automation).
+CI lives in `.github/workflows/ci.yml`. `keystate-cli` is not published to
+crates.io, so there is no release/publish workflow — releases are git tags on
+`main` (see `RELEASE.md`).
 
 | Trigger | Checks |
 |---|---|
 | Every PR (to develop or main) and every push to develop | `cargo fmt --check`, `cargo clippy -- -D warnings`, unit + doc tests, MSRV check (1.85), `cargo audit`, `cargo deny`, `cargo tree -e features` must not contain `preserve_order` |
-| PR to main (the release PR) | Quality gate: fmt, clippy, tests, `cargo package` |
-| Release PR merged into main | release-plz creates the git tag (`keystate-cli-v<version>`), publishes to crates.io, and creates the GitHub release |
+| PR to main (the release PR) | The full `ci.yml` suite above — since `pull_request` in `ci.yml` is unfiltered, a PR to `main` is gated exactly like any other |
 | Nightly, scheduled | Full backend version matrix (integration tests across all supported versions), completeness regression test (adapter repos) |
 | Integration (live Keycloak) | Runs the repo's `docker-compose.yml` stack and the `tests/integration.rs` suite (`cargo test --test integration -- --ignored`) — drives the real binary and verifies the output: config.json / report.json content, byte-identical re-extraction, and `--check` drift semantics (exit 3) |
 
@@ -217,9 +218,11 @@ the second line of defense behind core's explicit key sorting: Cargo unifies
 features per build, so a transitive crate enabling serde_json's
 `preserve_order` would silently break canonical byte stability.
 
-Nothing ships without a green gate: the release-plz job only runs on the main
-merge, and the crates.io token exists only as the `CARGO_REGISTRY_TOKEN`
-secret.
+`keystate-cli` depends on `keystate-core` and `keystate-adapter-keycloak`
+directly via git branches — a permanent arrangement, since the CLI is never
+published to crates.io. Keep those pins pointed at stable branches
+(`develop`), never feature branches, once the adapter's extraction work
+merges.
 
 ## 6. Code Review Checklist
 
