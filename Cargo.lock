@@ -778,7 +778,7 @@ dependencies = [
 [[package]]
 name = "keystate-adapter-keycloak"
 version = "0.2.0"
-source = "git+https://github.com/KeyState/keystate-adapter-keycloak?branch=feat%2Fv0.2-realm-extraction#7943efa5ef4a99f0b3be483ca8840a4efa0e2691"
+source = "git+https://github.com/KeyState/keystate-adapter-keycloak?branch=develop#22ae11b7e29421a9f0f70262a49306c2d3b5fc98"
 dependencies = [
  "keystate-core",
  "serde",
