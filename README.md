@@ -119,6 +119,22 @@ db_url = "${DATABASE_URL}"   # reference an env var; never embed the secret
 directory = "./keystate-out"
 ```
 
+## Run with the container image
+
+Release images are published to GHCR (`ghcr.io/keystate/keystate-cli`,
+tagged with the version and `latest`):
+
+```sh
+docker pull ghcr.io/keystate/keystate-cli:latest
+docker run --rm \
+  -e KEYSTATE_DB_URL=postgres://keycloak:keycloak@localhost:5432/keycloak \
+  -v "$PWD/keystate-out:/out" \
+  ghcr.io/keystate/keystate-cli:latest extract --realm master --output /out
+```
+
+The image runs as a non-root user; mount an output directory the container
+can write to.
+
 ## Development
 
 - `docker compose up -d --wait` — start the local Keycloak + Postgres stack.

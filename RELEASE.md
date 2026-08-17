@@ -47,25 +47,36 @@ directly. A release is the deliberate act of opening a **release PR from
   full gate (fmt, clippy `-D warnings`, unit + integration + doc tests, live
   Keycloak integration, MSRV 1.85, `cargo audit`, `cargo deny`, the
   `preserve_order` guard) before it can land.
-- **`keystate-cli` is not published to crates.io.** It ships as a binary and
-  a Docker image on GitHub Releases, so there is no crates.io publish step,
-  no `CARGO_REGISTRY_TOKEN`, and no release-plz pipeline. Consequently the
-  CLI depends on `keystate-core` and `keystate-adapter-keycloak` directly via
-  git — a permanent arrangement, not a pre-release workaround. Keep those
-  pins on stable branches (`develop`), never feature branches, once the
-  adapter's extraction work merges.
+- **`keystate-cli` is not published to crates.io.** It ships as a binary on
+  GitHub Releases and a container image on GHCR, so there is no crates.io
+  publish step, no `CARGO_REGISTRY_TOKEN`, and no release-plz pipeline.
+  Consequently the CLI depends on `keystate-core` and
+  `keystate-adapter-keycloak` directly via git — a permanent arrangement, not
+  a pre-release workaround. Keep those pins on stable branches (`develop`),
+  never feature branches, once the adapter's extraction work merges.
 - **A release is: merge the release PR, then tag.** After the release PR to
-  `main` merges, tag it (`keystate-cli-v<version>`), build the release
-  binary, and publish the GitHub release (with the Docker image). Building
-  and attaching artifacts can be automated with a tag-triggered workflow
-  later; the org does not currently gate on it.
+  `main` merges, push the tag `keystate-cli-v<version>`. The tag triggers
+  `.github/workflows/release.yml`, which gates (fmt/clippy/tests), builds the
+  release binary, pushes the image to **GHCR**
+  (`ghcr.io/keystate/keystate-cli`, `latest` + version), and creates the
+  **GitHub Release** with the binary tarball and `sha256` checksum. No other
+  registry — Docker Hub is out of scope for now.
 - **No direct pushes to `main`, no manual `cargo publish`.** The only way
   `main` changes is a merged PR from `develop`.
 - **Releases only happen on green gates.** `ci.yml` gates every PR and push
-  to `develop`; the release PR to `main` runs the same suite.
+  to `develop`; the release PR to `main` runs the same suite; and
+  `release.yml` re-runs fmt/clippy/tests on the tag before publishing
+  anything.
 - **Versions are bumped in the release PR.** Bump `Cargo.toml` in the release
   PR itself. The org follows the semver policy in §1; Conventional Commit
   types in the merged history tell you what the bump should be.
+
+### GHCR image — one-time setup
+
+- **Nothing to configure.** The tag workflow logs in with the built-in
+  `GITHUB_TOKEN` (`packages: write`). Packages default to private on GitHub —
+  flip `ghcr.io/keystate/keystate-cli` to public in Package settings if you
+  want anonymous pulls.
 
 ### Publish targets per repo
 
@@ -73,8 +84,8 @@ directly. A release is the deliberate act of opening a **release PR from
   project is public and stable enough to commit to that namespace; a private
   registry is fine in the meantime).
 - `keystate-cli` is the only repo that builds and publishes the actual
-  distributable — the binary release on GitHub Releases and the Docker image
-  — and it is **not** published to crates.io.
+  distributable — the binary release on GitHub Releases and the GHCR image —
+  and it is **not** published to crates.io.
 
 ### Branch protection
 
