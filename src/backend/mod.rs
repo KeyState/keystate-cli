@@ -36,7 +36,11 @@ impl Backend {
     }
 }
 
-/// Extract and verify one realm from the selected backend.
+/// Extract, verify, and render one realm from the selected backend.
+///
+/// Returns the canonical model (for status/reporting), the verification
+/// report, and the backend's importable realm-export value (Keycloak's
+/// realm-export format, the artifact keystate persists).
 ///
 /// Monomorphized per backend via the concrete `match`; the returned future is
 /// `Send` (core's `Extractor` contract), so the CLI drives it on tokio.
@@ -45,7 +49,7 @@ pub async fn extract(
     realm: &str,
     db_url: &str,
     progress: &Progress,
-) -> Result<(CanonicalRealm, VerificationReport)> {
+) -> Result<(CanonicalRealm, VerificationReport, serde_json::Value)> {
     match backend {
         Backend::Keycloak => keycloak::extract(realm, db_url, progress).await,
     }

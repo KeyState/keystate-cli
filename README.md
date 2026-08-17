@@ -77,7 +77,7 @@ Commands:
 #### Output layout
 
 ```text
-<output>/<backend>/<realm>/<utc-timestamp>/config.json   # canonical config (sorted keys, volatile-free)
+<output>/<backend>/<realm>/<utc-timestamp>/realm-export.json  # importable realm-export (Keycloak format, no ids)
                                      /report.json   # completeness report
                      /latest          # names the most recent run directory
 ```
@@ -86,6 +86,11 @@ Every run writes a fresh timestamped directory — nothing is overwritten in
 place — and the `latest` pointer names the current state. Re-running against
 an unchanged source is byte-identical (the idempotency guarantee), so a diff
 between snapshots reflects real configuration drift, never extraction noise.
+
+`realm-export.json` is the tool's config artifact: Keycloak's realm-export
+format, emitted without `id` fields or id-references so a tool like
+keycloak-config-cli can import it back (the round-trip the project validates
+before every release — see `RELEASE.md`).
 
 #### Drift detection
 

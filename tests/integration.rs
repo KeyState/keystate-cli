@@ -10,13 +10,15 @@
 //! ```
 //!
 //! The tests exercise the binary end to end and *verify the output artifacts*:
-//! config.json (sorted, volatile-free), report.json (complete), byte-identical
-//! re-extraction, and `--check` drift semantics with exit code 3.
+//! realm-export.json (importable: no ids, no id-references, sorted), report.json
+//! (complete), byte-identical re-extraction, and `--check` drift semantics
+//! with exit code 3.
 
 use std::path::Path;
 
 use assert_cmd::Command;
 use predicates::prelude::*;
+use serde_json::Value;
 
 /// The compose stack's Postgres URL (see docker-compose.yml).
 const DB_URL: &str = "postgres://keycloak:keycloak@localhost:5432/keycloak";
@@ -48,35 +50,55 @@ fn root(output: &Path) -> std::path::PathBuf {
     output.join("keycloak").join(REALM)
 }
 
+/// Assert no object anywhere in `value` carries an `id` key — the round-trip
+/// contract keycloak-config-cli requires (it regenerates every id on import).
+fn assert_no_ids(value: &Value) {
+    match value {
+        Value::Object(map) => {
+            assert!(
+                !map.contains_key("id"),
+                "an `id` key would make the export non-importable: {value}"
+            );
+            for v in map.values() {
+                assert_no_ids(v);
+            }
+        }
+        Value::Array(items) => {
+            for v in items {
+                assert_no_ids(v);
+            }
+        }
+        _ => {}
+    }
+}
+
 #[test]
 #[ignore = "requires the docker-compose stack (docker compose up -d --wait)"]
-fn extract_writes_config_and_report_and_exits_zero() {
+fn extract_writes_realm_export_and_report_and_exits_zero() {
     let dir = tempfile::tempdir().unwrap();
     extract_to(dir.path());
 
     let latest = std::fs::read_to_string(root(dir.path()).join("latest")).expect("latest pointer");
     let run = root(dir.path()).join(latest.trim());
 
-    let config_path = run.join("config.json");
+    let export_path = run.join("realm-export.json");
     let report_path = run.join("report.json");
-    assert!(config_path.is_file(), "config.json missing");
+    assert!(export_path.is_file(), "realm-export.json missing");
     assert!(report_path.is_file(), "report.json missing");
 
-    let config: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(&config_path).unwrap()).unwrap();
+    let export: Value = serde_json::from_slice(&std::fs::read(&export_path).unwrap()).unwrap();
+    assert_eq!(export["realm"], REALM);
     assert!(
-        config.get("volatile").is_none(),
-        "volatile leaked into config"
-    );
-    assert_eq!(config["backend"]["backend"], "keycloak");
-    assert_eq!(config["realm"]["name"], REALM);
-    assert!(
-        config["realm"]["enabled"] == serde_json::json!(true),
+        export["enabled"] == serde_json::json!(true),
         "master realm should be enabled"
     );
+    assert_no_ids(&export);
+    assert!(
+        export["clients"] == serde_json::json!([]),
+        "realm-settings scope extracts no clients yet"
+    );
 
-    let report: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(&report_path).unwrap()).unwrap();
+    let report: Value = serde_json::from_slice(&std::fs::read(&report_path).unwrap()).unwrap();
     assert_eq!(report["backend"], "keycloak");
     assert_eq!(
         report["issues"],
@@ -108,8 +130,8 @@ fn re_extraction_is_byte_identical_and_history_is_preserved() {
     let latest_dir = root.join(latest.trim());
     let previous = runs.iter().find(|p| *p != &latest_dir).expect("prior run");
     assert_eq!(
-        std::fs::read(latest_dir.join("config.json")).unwrap(),
-        std::fs::read(previous.join("config.json")).unwrap(),
+        std::fs::read(latest_dir.join("realm-export.json")).unwrap(),
+        std::fs::read(previous.join("realm-export.json")).unwrap(),
         "re-running against an unchanged source must be byte-identical"
     );
 }
@@ -164,10 +186,12 @@ fn check_reports_unchanged_then_drift_with_exit_code_3() {
         .stdout(predicate::str::contains("\"check\":\"unchanged\""))
         .stdout(predicate::str::contains("\"status\":\"ok\""));
 
-    // Corrupt the stored config -> would-change, exit code 3.
+    // Corrupt the stored export -> would-change, exit code 3.
     let latest = std::fs::read_to_string(root(dir.path()).join("latest")).unwrap();
     std::fs::write(
-        root(dir.path()).join(latest.trim()).join("config.json"),
+        root(dir.path())
+            .join(latest.trim())
+            .join("realm-export.json"),
         b"{\"mutated\": true}",
     )
     .unwrap();

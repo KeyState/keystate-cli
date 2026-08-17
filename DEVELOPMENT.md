@@ -211,7 +211,7 @@ the GHCR image and a GitHub Release (see `RELEASE.md`).
 | PR to main (the release PR) | The full `ci.yml` suite above — since `pull_request` in `ci.yml` is unfiltered, a PR to `main` is gated exactly like any other |
 | Release tag push (`v*`) | `release.yml`: re-gates fmt/clippy/tests, builds the release binary, pushes `ghcr.io/keystate/keystate-cli` (`latest` + version), creates the GitHub Release with the binary + checksum |
 | Nightly, scheduled | Full backend version matrix (integration tests across all supported versions), completeness regression test (adapter repos) |
-| Integration (live Keycloak) | Runs the repo's `docker-compose.yml` stack and the `tests/integration.rs` suite (`cargo test --test integration -- --ignored`) — drives the real binary and verifies the output: config.json / report.json content, byte-identical re-extraction, and `--check` drift semantics (exit 3) |
+| Integration (live Keycloak) | Runs the repo's `docker-compose.yml` stack and the `tests/integration.rs` suite (`cargo test --test integration -- --ignored`) — drives the real binary and verifies the output: realm-export.json / report.json content (importable shape: no ids), byte-identical re-extraction, and `--check` drift semantics (exit 3) |
 
 The integration suite needs the compose stack; on a PR it runs in the
 `test-integration` job, locally via `docker compose up -d --wait` and

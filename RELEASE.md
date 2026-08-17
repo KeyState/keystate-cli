@@ -71,6 +71,35 @@ directly. A release is the deliberate act of opening a **release PR from
   PR itself. The org follows the semver policy in §1; Conventional Commit
   types in the merged history tell you what the bump should be.
 
+### Round-trip validation — the pre-release gate
+
+Before anything ships, the extraction must be *proven importable*: the tool's
+`realm-export.json` output (Keycloak's realm-export format, no `id` fields,
+no id-references) must be re-importable into a live Keycloak via
+[keycloak-config-cli]. That is what makes "extract → restore" a real guarantee
+rather than a format claim.
+
+- **How it runs:** against the local/CI stack (Keycloak 26.5.5 + Postgres 16),
+  `keystate extract` pulls the realm, the `realm` name in the output is
+  changed (importing `master` would conflict), and config-cli imports the
+  result. The imported realm's settings are then read back and compared.
+- **Committed golden files.** `contrib/example-config/` holds every file CI
+  must keep importable: `empty-realm.json` (the baseline shape) and the
+  keystate-extracted realm (import-validated before commit). CI imports all
+  files in that folder on every PR, so a change that breaks something that
+  once imported fails the build instead of shipping.
+- **Keycloak version coupling.** config-cli's model tracks specific Keycloak
+  releases; its `latest` tag is built against 26.5.5, which is why the stack
+  runs 26.5.5 and the adapter pins `SUPPORTED_KEYCLOAK_VERSION = 26.5.5`.
+  When config-cli publishes a newer target, bump the stack + adapter in
+  lockstep rather than mixing versions.
+- **Keep the files small.** config-cli's own guidance: omit everything
+  Keycloak defaults. The rendering drops `id`s, flow/role id-references,
+  `keycloakVersion`, and nulls; extraction additions must stay within that
+  contract.
+
+[keycloak-config-cli]: https://github.com/adorsys/keycloak-config-cli
+
 ### GHCR image — one-time setup
 
 - **Nothing to configure.** The tag workflow logs in with the built-in

@@ -778,7 +778,7 @@ dependencies = [
 [[package]]
 name = "keystate-adapter-keycloak"
 version = "0.2.0"
-source = "git+https://github.com/KeyState/keystate-adapter-keycloak?branch=develop#22ae11b7e29421a9f0f70262a49306c2d3b5fc98"
+source = "git+https://github.com/KeyState/keystate-adapter-keycloak?branch=develop#df26b5d50269e1e601a694a547c2103b43a25d40"
 dependencies = [
  "keystate-core",
  "serde",
@@ -811,7 +811,7 @@ dependencies = [
 [[package]]
 name = "keystate-core"
 version = "0.1.0"
-source = "git+https://github.com/KeyState/keystate-core?branch=develop#c8068fc07f0f9d9998f488bf8f36cf90e23bae33"
+source = "git+https://github.com/KeyState/keystate-core?branch=develop#fd399d876973571c52963cf4c30994036a34c393"
 dependencies = [
  "serde",
  "serde_json",
