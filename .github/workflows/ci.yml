@@ -65,6 +65,29 @@ jobs:
         if: always()
         run: docker compose down -v
 
+  import-test:
+    name: Import golden files (config-cli round-trip)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Keycloak + Postgres
+        run: docker compose up -d --wait --wait-timeout 300
+      - name: Import every file in contrib/example-config
+        run: |
+          for f in contrib/example-config/*.json; do
+            echo "== Importing ${f} =="
+            docker run --rm --network host \
+              -e KEYCLOAK_URL=http://localhost:8080 \
+              -e KEYCLOAK_USER=admin \
+              -e KEYCLOAK_PASSWORD=admin \
+              -e IMPORT_FILES_LOCATIONS="/config/$(basename "$f")" \
+              -v "$PWD/contrib/example-config:/config:ro" \
+              adorsys/keycloak-config-cli:latest
+          done
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
+
   msrv:
     name: MSRV (1.85)
     runs-on: ubuntu-latest
