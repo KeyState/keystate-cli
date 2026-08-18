@@ -228,7 +228,32 @@ adapter's registry core would be two different crates and the types would not
 unify. Pointing the deps at git `develop` branches is a temporary measure for
 the pre-release phase only; a released crate carries no git dependencies.
 
-## 6. Code Review Checklist
+## 6. Output format contract (next release)
+
+Tracked for the next release; not yet implemented. Today both artifacts are
+emitted as compact (one-line) JSON with alphabetically sorted top-level keys.
+
+- **Pretty-print.** `realm-export.json` and `report.json` must be written as
+  pretty-printed JSON (2-space indent), never one-line JSON, so the artifacts
+  are human-reviewable on disk without a formatter.
+- **Keycloak-export key order.** `realm-export.json` top-level keys must
+  follow Keycloak's own realm-export order, as captured by the golden file
+  `contrib/example-config/empty-realm.json` (`realm` → settings (`enabled`,
+  `sslRequired`, otp policy, …) → entity collections → `clientProfiles` /
+  `clientPolicies`). Every resource added in later milestones must be inserted
+  at the position Keycloak's export uses for it, so the artifact stays
+  structurally aligned with Keycloak's official export and can be diffed
+  against it directly.
+
+**Implementation note.** Core's `canonical_bytes` must stay sorted
+(BTreeMap-based) for canonical byte stability across backends — the
+`preserve_order` guard in CI exists precisely so a transitive dependency can't
+change that ordering. So the curated order and pretty printing apply only to
+the human-facing artifact serialization (the CLI's sink), via a deterministic
+ordered writer. Because the ordered serialization is deterministic,
+idempotency and `--check` semantics are unaffected.
+
+## 7. Code Review Checklist
 
 Beyond the usual correctness review, reviewers on Keystate PRs specifically
 check:
