@@ -1,0 +1,42 @@
+[package]
+name = "keystate-cli"
+version = "0.1.0"
+edition = "2024"
+description = "The Keystate command-line tool — extracts and verifies IAM configuration state from backend databases."
+license = "Apache-2.0"
+rust-version = "1.85"
+readme = "README.md"
+repository = "https://github.com/KeyState/keystate-cli"
+homepage = "https://github.com/KeyState/keystate-cli"
+documentation = "https://docs.rs/keystate-cli"
+keywords = ["identity", "iam", "keycloak", "configuration", "extraction"]
+categories = ["command-line-utilities"]
+
+[package.metadata.docs.rs]
+all-features = true
+
+[[bin]]
+name = "keystate"
+path = "src/main.rs"
+
+[dependencies]
+# Pinned to the released crates.io versions. The adapter (released 0.3.0)
+# depends on keystate-core from crates.io, so the CLI must use the same
+# source — a git core alongside a registry core would be two different
+# crates and the types would not unify.
+keystate-core = "0.1.0"
+keystate-adapter-keycloak = "0.3.0"
+clap = { version = "4.5", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+thiserror = "2.0"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+rpassword = "7.3"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.0"
+pretty_assertions = "1.4"
+tempfile = "3.0"
