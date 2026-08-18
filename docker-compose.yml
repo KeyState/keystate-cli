@@ -1,6 +1,6 @@
 # Local integration-test stack for keystate-cli.
 #
-# Spins up Keycloak 26.7.0 backed by Postgres — the same stack the
+# Spins up Keycloak 26.5.5 backed by Postgres — the same stack the
 # keystate-adapter-keycloak integration tests use, here to drive the CLI's
 # end-to-end tests (tests/integration.rs) and local development.
 #
@@ -27,7 +27,7 @@ services:
       - "5432:5432"
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.7.0
+    image: quay.io/keycloak/keycloak:26.5.5
     command: start-dev
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin

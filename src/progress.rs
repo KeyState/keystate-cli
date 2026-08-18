@@ -85,6 +85,11 @@ impl Progress {
         ));
     }
 
+    /// Report the start of realm-export rendering.
+    pub fn rendering(&self) {
+        self.step("Rendering realm-export...");
+    }
+
     /// Report the destination of a write.
     pub fn writing(&self, path: &std::path::Path) {
         self.step(format!("Writing output to {}", path.display()));

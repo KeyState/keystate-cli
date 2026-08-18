@@ -4,7 +4,7 @@
 //! trivial:
 //!
 //! ```text
-//! <output>/<backend>/<realm>/<utc-timestamp>/config.json
+//! <output>/<backend>/<realm>/<utc-timestamp>/realm-export.json
 //!                                   /report.json
 //!                    /latest          <- names the most recent run directory
 //! ```
@@ -20,8 +20,9 @@ use std::path::{Path, PathBuf};
 
 use crate::error::{Error, Result};
 
-/// Name of the canonical config artifact.
-pub const CONFIG_FILE: &str = "config.json";
+/// Name of the importable realm-export artifact (the format keycloak-config-cli
+/// accepts). This is the tool's primary config artifact.
+pub const REALM_EXPORT_FILE: &str = "realm-export.json";
 /// Name of the completeness report artifact.
 pub const REPORT_FILE: &str = "report.json";
 /// Name of the pointer file that names the most recent run directory.

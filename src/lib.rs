@@ -53,7 +53,7 @@ pub async fn run(cli: Cli) -> Result<Exit> {
             let sink =
                 output::LocalFileSink::new(&opts.output_dir, opts.backend.name(), &opts.realm)?;
 
-            let (canonical, report) =
+            let (canonical, report, export) =
                 backend::extract(opts.backend, &opts.realm, &opts.db_url, &progress).await?;
 
             let (errors, warnings) = report.counts();
@@ -61,8 +61,8 @@ pub async fn run(cli: Cli) -> Result<Exit> {
             let complete = report.is_complete();
 
             if opts.check {
-                let (config, _report) = sink.artifacts(&canonical, &report)?;
-                let status = sink.check(&config)?;
+                let (export_bytes, _report) = sink.artifacts(&export, &report)?;
+                let status = sink.check(&export_bytes)?;
                 progress.checked(status.as_str());
                 progress.emit_status(&Status {
                     status: status_string(status),
@@ -81,7 +81,7 @@ pub async fn run(cli: Cli) -> Result<Exit> {
                 });
             }
 
-            let written = sink.write(&canonical, &report)?;
+            let written = sink.write(&export, &report)?;
             progress.writing(&written.run_dir);
             progress.emit_status(&Status {
                 status: "ok",

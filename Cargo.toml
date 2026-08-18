@@ -20,10 +20,12 @@ name = "keystate"
 path = "src/main.rs"
 
 [dependencies]
-keystate-core = { version = "0.1.0", git = "https://github.com/KeyState/keystate-core", branch = "develop" }
-# Permanent git dependencies: keystate-cli is not published to crates.io, so
-# core/adapter are always consumed from git, pinned to stable branches.
-keystate-adapter-keycloak = { version = "0.2.0", git = "https://github.com/KeyState/keystate-adapter-keycloak", branch = "develop" }
+# Pinned to the released crates.io versions. The adapter (released 0.3.0)
+# depends on keystate-core from crates.io, so the CLI must use the same
+# source — a git core alongside a registry core would be two different
+# crates and the types would not unify.
+keystate-core = "0.1.0"
+keystate-adapter-keycloak = "0.3.0"
 clap = { version = "4.5", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

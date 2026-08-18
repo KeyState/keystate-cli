@@ -77,7 +77,7 @@ Commands:
 #### Output layout
 
 ```text
-<output>/<backend>/<realm>/<utc-timestamp>/config.json   # canonical config (sorted keys, volatile-free)
+<output>/<backend>/<realm>/<utc-timestamp>/realm-export.json  # importable realm-export (Keycloak format, no ids)
                                      /report.json   # completeness report
                      /latest          # names the most recent run directory
 ```
@@ -86,6 +86,11 @@ Every run writes a fresh timestamped directory — nothing is overwritten in
 place — and the `latest` pointer names the current state. Re-running against
 an unchanged source is byte-identical (the idempotency guarantee), so a diff
 between snapshots reflects real configuration drift, never extraction noise.
+
+`realm-export.json` is the tool's config artifact: Keycloak's realm-export
+format, emitted without `id` fields or id-references so a tool like
+keycloak-config-cli can import it back (the round-trip the project validates
+before every release — see `RELEASE.md`).
 
 #### Drift detection
 
@@ -118,6 +123,22 @@ db_url = "${DATABASE_URL}"   # reference an env var; never embed the secret
 [output]
 directory = "./keystate-out"
 ```
+
+## Run with the container image
+
+Release images are published to GHCR (`ghcr.io/keystate/keystate-cli`,
+tagged with the version and `latest`):
+
+```sh
+docker pull ghcr.io/keystate/keystate-cli:latest
+docker run --rm \
+  -e KEYSTATE_DB_URL=postgres://keycloak:keycloak@localhost:5432/keycloak \
+  -v "$PWD/keystate-out:/out" \
+  ghcr.io/keystate/keystate-cli:latest extract --realm master --output /out
+```
+
+The image runs as a non-root user; mount an output directory the container
+can write to.
 
 ## Development
 

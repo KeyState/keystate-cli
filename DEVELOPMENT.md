@@ -200,16 +200,18 @@ test server.
 
 ## 5. What CI Runs, and When
 
-CI lives in `.github/workflows/ci.yml`. `keystate-cli` is not published to
-crates.io, so there is no release/publish workflow — releases are git tags on
-`main` (see `RELEASE.md`).
+CI lives in `.github/workflows/ci.yml` (quality gates) and
+`.github/workflows/release.yml` (tag-triggered publishing). `keystate-cli`
+is not published to crates.io — releases are git tags on `main` that push
+the GHCR image and a GitHub Release (see `RELEASE.md`).
 
 | Trigger | Checks |
 |---|---|
 | Every PR (to develop or main) and every push to develop | `cargo fmt --check`, `cargo clippy -- -D warnings`, unit + doc tests, MSRV check (1.85), `cargo audit`, `cargo deny`, `cargo tree -e features` must not contain `preserve_order` |
 | PR to main (the release PR) | The full `ci.yml` suite above — since `pull_request` in `ci.yml` is unfiltered, a PR to `main` is gated exactly like any other |
+| Release tag push (`v*`) | `release.yml`: re-gates fmt/clippy/tests, builds the release binary, pushes `ghcr.io/keystate/keystate-cli` (`latest` + version), creates the GitHub Release with the binary + checksum |
 | Nightly, scheduled | Full backend version matrix (integration tests across all supported versions), completeness regression test (adapter repos) |
-| Integration (live Keycloak) | Runs the repo's `docker-compose.yml` stack and the `tests/integration.rs` suite (`cargo test --test integration -- --ignored`) — drives the real binary and verifies the output: config.json / report.json content, byte-identical re-extraction, and `--check` drift semantics (exit 3) |
+| Integration (live Keycloak) | Runs the repo's `docker-compose.yml` stack and the `tests/integration.rs` suite (`cargo test --test integration -- --ignored`) — drives the real binary and verifies the output: realm-export.json / report.json content (importable shape: no ids), byte-identical re-extraction, and `--check` drift semantics (exit 3) |
 
 The integration suite needs the compose stack; on a PR it runs in the
 `test-integration` job, locally via `docker compose up -d --wait` and
@@ -218,11 +220,13 @@ the second line of defense behind core's explicit key sorting: Cargo unifies
 features per build, so a transitive crate enabling serde_json's
 `preserve_order` would silently break canonical byte stability.
 
-`keystate-cli` depends on `keystate-core` and `keystate-adapter-keycloak`
-directly via git branches — a permanent arrangement, since the CLI is never
-published to crates.io. Keep those pins pointed at stable branches
-(`develop`), never feature branches, once the adapter's extraction work
-merges.
+`keystate-cli` is never published to crates.io, but it depends on the
+**released** `keystate-core` (0.1.0) and `keystate-adapter-keycloak` (0.3.0)
+from crates.io — the release-train contract: once an adapter releases, the
+CLI follows to the released versions, because mixing a git core with the
+adapter's registry core would be two different crates and the types would not
+unify. Pointing the deps at git `develop` branches is a temporary measure for
+the pre-release phase only; a released crate carries no git dependencies.
 
 ## 6. Code Review Checklist
 

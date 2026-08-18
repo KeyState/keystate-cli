@@ -1,10 +1,11 @@
 //! Keycloak extraction: driving the adapter through the core pipeline.
 //!
 //! Builds the adapter's extractor, runs `detect` → `extract`, binds the
-//! version-specific manifest, and verifies completeness. Everything Keycloak-
-//! specific lives here behind [`super::extract`].
+//! version-specific manifest, verifies completeness, and renders the
+//! importable realm-export artifact. Everything Keycloak-specific lives here
+//! behind [`super::extract`].
 
-use keystate_adapter_keycloak::KeycloakExtractor;
+use keystate_adapter_keycloak::{KeycloakExtractor, realm_export};
 use keystate_core::{
     CanonicalRealm, ExtractScope, Extractor, ManifestVerifier, VerificationReport,
 };
@@ -12,12 +13,12 @@ use keystate_core::{
 use crate::error::{Error, Result};
 use crate::progress::Progress;
 
-/// Detect, extract, and verify one Keycloak realm.
+/// Detect, extract, verify, and render one Keycloak realm.
 pub async fn extract(
     realm: &str,
     db_url: &str,
     progress: &Progress,
-) -> Result<(CanonicalRealm, VerificationReport)> {
+) -> Result<(CanonicalRealm, VerificationReport, serde_json::Value)> {
     let extractor = KeycloakExtractor::new(db_url)?;
 
     let info = extractor.detect().await?;
@@ -31,5 +32,8 @@ pub async fn extract(
     let report = ManifestVerifier.verify(&canonical, &manifest)?;
     progress.verifying(&report);
 
-    Ok((canonical, report))
+    let export = realm_export(&canonical);
+    progress.rendering();
+
+    Ok((canonical, report, export))
 }
