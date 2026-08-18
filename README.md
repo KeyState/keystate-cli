@@ -140,6 +140,33 @@ docker run --rm \
 The image runs as a non-root user; mount an output directory the container
 can write to.
 
+## Validation against Keycloak 26.5.5
+
+`keystate-cli` v0.1.0 was exercised end-to-end against a live
+Keycloak 26.5.5 + Postgres 16 stack (the same versions CI and the
+release gate run against). Every realm setting in the export was
+compared against the values Keycloak itself persists in its database,
+and the artifact was checked against the round-trip contract that keeps
+it re-importable:
+
+| Check | Result |
+|---|---|
+| Backend detected | `keycloak 26.5.5` |
+| Realm settings compared (export vs DB) | 34 exact matches |
+| Columns NULL in both (omitted by design) | 6 |
+| Mismatches | 0 |
+| `id` fields in the export | 0 |
+| `keycloakVersion` in the export | none |
+| Completeness report (`report.json`) | `issues: []` (0 errors, 0 warnings) |
+| Re-extraction against unchanged DB | byte-identical (idempotent) |
+
+The columns that are `NULL` in the database are omitted from the export on
+purpose — absent settings are Keycloak defaults, which is the smallest
+importable shape keycloak-config-cli recommends. The import leg of the
+round-trip (extract → keycloak-config-cli import → read-back) runs against
+this same 26.5.5 stack before every release; see `RELEASE.md` "Round-trip
+validation".
+
 ## Development
 
 - `docker compose up -d --wait` — start the local Keycloak + Postgres stack.
