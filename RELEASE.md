@@ -50,10 +50,10 @@ directly. A release is the deliberate act of opening a **release PR from
 - **`keystate-cli` is not published to crates.io.** It ships as a binary on
   GitHub Releases and a container image on GHCR, so there is no crates.io
   publish step, no `CARGO_REGISTRY_TOKEN`, and no release-plz pipeline.
-  Consequently the CLI depends on `keystate-core` and
-  `keystate-adapter-keycloak` directly via git — a permanent arrangement, not
-  a pre-release workaround. Keep those pins on stable branches (`develop`),
-  never feature branches, once the adapter's extraction work merges.
+  It depends on the **released** `keystate-core` and
+  `keystate-adapter-keycloak` from crates.io (see §2 "Release train"); git
+  `develop` refs are a temporary pre-release measure only, since mixing a git
+  core with a released adapter's registry core would be two different crates.
 - **A release is: merge the release PR, then tag.** After the release PR to
   `main` merges, push the tag `keystate-cli-v<version>`. The tag triggers
   `.github/workflows/release.yml`, which gates (fmt/clippy/tests), builds the

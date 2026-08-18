@@ -220,11 +220,13 @@ the second line of defense behind core's explicit key sorting: Cargo unifies
 features per build, so a transitive crate enabling serde_json's
 `preserve_order` would silently break canonical byte stability.
 
-`keystate-cli` depends on `keystate-core` and `keystate-adapter-keycloak`
-directly via git branches — a permanent arrangement, since the CLI is never
-published to crates.io. Keep those pins pointed at stable branches
-(`develop`), never feature branches, once the adapter's extraction work
-merges.
+`keystate-cli` is never published to crates.io, but it depends on the
+**released** `keystate-core` (0.1.0) and `keystate-adapter-keycloak` (0.3.0)
+from crates.io — the release-train contract: once an adapter releases, the
+CLI follows to the released versions, because mixing a git core with the
+adapter's registry core would be two different crates and the types would not
+unify. Pointing the deps at git `develop` branches is a temporary measure for
+the pre-release phase only; a released crate carries no git dependencies.
 
 ## 6. Code Review Checklist
 

@@ -777,8 +777,9 @@ dependencies = [
 
 [[package]]
 name = "keystate-adapter-keycloak"
-version = "0.2.0"
-source = "git+https://github.com/KeyState/keystate-adapter-keycloak?branch=develop#df26b5d50269e1e601a694a547c2103b43a25d40"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "86acb025ab0591b887b8d2bd5f0c3d935469d8ca4ae1a4e818754f07936ce21a"
 dependencies = [
  "keystate-core",
  "serde",
@@ -811,7 +812,8 @@ dependencies = [
 [[package]]
 name = "keystate-core"
 version = "0.1.0"
-source = "git+https://github.com/KeyState/keystate-core?branch=develop#fd399d876973571c52963cf4c30994036a34c393"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3a1ff0ed7ff382c1f175fdec817215d95dec16003b35752a48b8b1c38b12b35"
 dependencies = [
  "serde",
  "serde_json",
@@ -2173,9 +2175,9 @@ dependencies = [
 
 [[package]]
 name = "zerovec-derive"
-version = "0.11.4"
+version = "0.11.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47402523226a02bfe5230160dc3ccc089aa6f6f19e7fcbb4e6f824bbb1b4aa62"
+checksum = "9f212a141d820099d57ffafb9569be9617a6f27d3dc881fbee8fb56642f917a9"
 dependencies = [
  "proc-macro2",
  "quote",
